@@ -1,4 +1,4 @@
-# Start Over 
+# Snake Dungeon
 This is my entry for the js13kgames 2019 challenge.
 
 Start is a puzzle platformer that when the player restarts the level, they keep clones of their old tries.
