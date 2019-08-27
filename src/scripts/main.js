@@ -1,45 +1,44 @@
-let { init, Sprite, GameLoop, initKeys, keyPressed } = kontra
-
+let { init, Sprite, GameLoop, initKeys, keyPressed, load, setImagePath, imageAssets } = kontra
 let { canvas } = init();
+setImagePath('./assets/');
+load('char.gif', 'gametiles.png').then(function () {
 
+  initKeys();
 
-initKeys();
+  let mainCharacter = getMainCharacter()
 
-let loop = GameLoop({
-  update: function () {
-    renderQueue.background.forEach(element => {
-      // element.obj.update();
-    });
-    renderQueue.sprite.forEach(element => {
-      // element.obj.update();
-    });
-    // renderQueue.main.forEach(element => {
+  let loop = GameLoop({
+    update: function () {
 
-    // });
-    if (mainCharacter) {
       if (keyPressed('d') || keyPressed('right')) {
         mainCharacter.x += 1
       }
       if (keyPressed('a') || keyPressed('left')) {
         mainCharacter.x -= 1
       }
-      mainCharacter.update();
-    }
-  },
-  render: function () {
-    renderQueue.background.forEach(element => {
-      element.obj.render();
-    });
-    renderQueue.sprite.forEach(element => {
-      element.obj.render();
-    });
-    // renderQueue.main.forEach(element => {
-    //   element.obj.render();
-    // });
-    if (mainCharacter) {
-      mainCharacter.render();
-    }
-  }
-});
 
-loop.start();    
+      if (keyPressed('w') || keyPressed('up')) {
+        mainCharacter.y -= 1
+      }
+
+      if (keyPressed('s') || keyPressed('down')) {
+        mainCharacter.y += 1
+      }
+
+      if (mainCharacter) {
+        mainCharacter.update();
+      }
+
+    },
+    render: function () {
+      if (typeof tileEngine !== 'undefined') {
+        tileEngine.render();
+      }
+      if (typeof mainCharacter !== 'undefined') {
+        mainCharacter.render();
+      }
+    }
+  });
+
+  loop.start();
+})

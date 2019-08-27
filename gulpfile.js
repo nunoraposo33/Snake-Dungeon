@@ -40,11 +40,11 @@ var prod = !!program.prod;
 
 gulp.task('default', ['build']);
 gulp.task('build', ['build_source', 'build_index', 'build_styles'], function () {
-  // return gulp.src('build/*')
-  //   .pipe(zip('archive.zip'))
-  //   .pipe(size())
-  //   // .pipe(micro({ limit: 13 * 1024 }))
-  //   .pipe(gulp.dest('dist'));
+  return gulp.src('build/*')
+    .pipe(zip('archive.zip'))
+    .pipe(size())
+    .pipe(micro({ limit: 13 * 1024 }))
+    .pipe(gulp.dest('dist'));
 });
 
 gulp.task('build_source', function () {
