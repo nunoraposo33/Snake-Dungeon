@@ -1,113 +1,138 @@
-function getEnemy(x, y, direction, waypoints) {
+function getEnemy(id, x, y, waypoints) {
+    waypoints.unshift({ x, y });
+    let common = commonPlayerEnenmy(ENEMY_SPEED, 'eup');
     return Sprite({
+        ...common,
         type: "enemy",
+        id: id,
         mode: "patrol",
         waypoints: waypoints,
         currentWaypoint: waypoints[0],
         x: x,
         y: y,
-        anchor: { x: 0.5, y: 0.5 },
         turning: false,
-        rotation: 0,
-        image: imageAssets['eup'],
+        mainCharacter: null,
+        canFire: true,
+        coneView: getConeView(this),
+        setMainChar: function (c) {
+            this.mainCharacter = c
+        },
         AI: function () {
+            if (this.mode == 'patrol') {
+                this.patrol()
+            } else if ('attack') {
+                this.attack()
+            } else if ('pursuit') {
 
-            if (this.x != this.currentWaypoint.x) {
-                if (this.x < this.currentWaypoint.x) {
-                    this.right()
-                } else if (this.x > this.currentWaypoint.x) {
-                    this.left()
-                } else {
-                    if (!this.turning) {
-                        this.turning = true
-                        setTimeout(() => {
-                            this.turning = false
-                            let wpInd = this.waypoints.findIndex((val) => {
-                                return val.x == this.currentWaypoint.x && val.y == this.currentWaypoint.y
-                            })
-                            this.currentWaypoint = this.waypoints[(wpInd + 1) % this.waypoints.length]
-                        }, 2000)
+            }
+        },
 
+        lookArround: function () {
+            this.coneView.x = this.x
+            this.coneView.direction = radians_to_degrees(this.rotation)
+            this.coneView.y = this.y
+            this.coneView.update();
+
+            const dist = Math.sqrt((this.mainCharacter.x - this.x) ** 2 + (this.mainCharacter.y - this.y) ** 2);
+            aim[this.id] = []
+
+
+            if (dist <= ENEMY_VISION_RANGE + PLAYER_SIZE) {
+                let a = (angle(this.mainCharacter.x, this.mainCharacter.y, this.x, this.y))
+
+                if (Math.abs(a - radians_to_degrees(this.rotation)) <= ENEMY_ANGLE_VISION / 2) {
+
+                    let pointNum = ENEMY_VISION_RANGE / PLAYER_SIZE
+
+
+                    let diff_x = this.mainCharacter.x - this.x
+                    let diff_y = this.mainCharacter.y - this.y
+
+                    let interval_X = diff_x / (pointNum + 1);
+                    let interval_Y = diff_y / (pointNum + 1);
+
+                    let points = []
+
+                    for (let i = 0; i <= pointNum; i++) {
+                        points.push({ x: this.x + interval_X * i, y: this.y + interval_Y * i, width: 1, height: 1 })
                     }
+
+                    let canSee = true
+                    points.some(point => {
+                        let p = Sprite({
+                            x: point.x,
+                            y: point.y,
+                            width: point.width,
+                            height: point.height,
+                            ttl: 50,
+                            color: 'green'
+                        });
+
+                        aim[this.id].push(p)
+                        if (tileEngine.layerCollidesWith(level, point)) {
+                            canSee = false;
+                            return true
+                        }
+                    })
+
+                    if (canSee) {
+                        this.mode = 'attack'
+                        console.log("Found yoou")
+                    }
+                }
+            }
+        },
+        patrol: function () {
+            if (Math.abs(this.x - this.currentWaypoint.x) > PLAYER_SIZE) {
+                // move in x axis
+                if (this.x - PLAYER_SIZE < this.currentWaypoint.x) {
+                    this.right()
+                } else {
+                    this.left()
+                }
+            } else if (Math.abs(this.y - this.currentWaypoint.y) > PLAYER_SIZE) {
+                // move in y axis
+                if (this.y - PLAYER_SIZE < this.currentWaypoint.y) {
+                    this.down()
+                } else {
+                    this.up()
                 }
             } else {
-                if (this.y < this.currentWaypoint.y) {
-                    this.down()
-                } else if (this.y > this.currentWaypoint.y) {
-                    this.up()
-                } else {
+                this.turn()
+            }
 
+            this.lookArround()
+        },
 
-                    if (!this.turning) {
-                        this.turning = true
-                        setTimeout(() => {
-                            this.turning = false
-                            let wpInd = this.waypoints.findIndex((val) => {
-                                return val.x == this.currentWaypoint.x && val.y == this.currentWaypoint.y
-                            })
-                            this.currentWaypoint = this.waypoints[(wpInd + 1) % this.waypoints.length]
-                        }, 2000)
+        attack: function () {
+            if (this.canFire) {
+                this.canFire = false
+                bullets.push(getBullet(this, this.mainCharacter))
 
+                setTimeout(() => {
+                    this.canFire = true
+                }, ENEMY_FIRE_DELAY)
+            }
+
+            this.mode = "patrol"
+        },
+
+        turn: function () {
+            if (!this.turning) {
+                this.turning = true
+                setTimeout(() => {
+                    this.turning = false
+                    let wpInd = this.waypoints.findIndex((val) => {
+                        return val.x == this.currentWaypoint.x && val.y == this.currentWaypoint.y
+                    })
+
+                    if (wpInd == this.waypoints.length - 1) {
+                        this.waypoints.reverse();
                     }
 
-                }
+                    this.currentWaypoint = this.waypoints[(wpInd + 1) % this.waypoints.length]
+                }, ENEMY_TURN_DELAY)
             }
         },
-
-        right: function () {
-            if (!this.willHitSomething("right")) {
-                this.direction = 'right'
-                this.x += ENEMY_SPEED
-                this.rotation = degrees_to_radians(90)
-
-            }
-        },
-        left: function () {
-            if (!this.willHitSomething("left")) {
-                this.direction = 'left'
-                this.x -= ENEMY_SPEED
-                this.rotation = degrees_to_radians(270)
-            }
-        },
-        up: function () {
-            if (!this.willHitSomething("up")) {
-                this.direction = 'up'
-                this.y -= ENEMY_SPEED
-                this.rotation = degrees_to_radians(0)
-            }
-        },
-        down: function () {
-            if (!this.willHitSomething("down")) {
-                this.direction = 'down'
-                this.y += ENEMY_SPEED
-                this.rotation = degrees_to_radians(180)
-
-            }
-        },
-        willHitSomething: function (direction) {
-
-            let r = false
-            switch (direction) {
-                case 'up':
-                    r = tileEngine.layerCollidesWith('lvl1', { x: this.x - TILE_SIZE / 2, y: this.y - ENEMY_SPEED - TILE_SIZE / 2, height: this.height - 1, width: this.width - 1 })
-                    break;
-                case 'down':
-                    r = tileEngine.layerCollidesWith('lvl1', { x: this.x - TILE_SIZE / 2, y: Math.ceil(this.y + ENEMY_SPEED) - TILE_SIZE / 2, height: this.height - 1, width: this.width - 1 })
-                    break;
-                case 'left':
-                    r = tileEngine.layerCollidesWith('lvl1', { x: Math.ceil(this.x - ENEMY_SPEED) - TILE_SIZE / 2, y: this.y - TILE_SIZE / 2, height: this.height - 1, width: this.width - 1 })
-                    break;
-                case 'right':
-                    r = tileEngine.layerCollidesWith('lvl1', { x: Math.ceil(this.x + ENEMY_SPEED) - TILE_SIZE / 2, y: this.y - TILE_SIZE / 2, height: this.height - 1, width: this.width - 1 })
-                    break;
-            }
-
-            // Check player collisions
-            // TODO
-
-
-            return r
-
-        }
     });
 }   

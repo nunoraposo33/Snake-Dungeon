@@ -1,95 +1,9 @@
-function getRandomInt(max) {
-    return Math.floor(Math.random() * Math.floor(max));
-}
-
-function degrees_to_radians(degrees) {
-    var pi = Math.PI;
-    return degrees * (pi / 180);
-}
-
-function radians_to_degrees(radians) {
-    var pi = Math.PI;
-    return radians * (180 / pi);
-}
-
-function angle(cx, cy, ex, ey) {
-    var dy = ey - cy;
-    var dx = ex - cx;
-    var theta = Math.atan2(dy, dx); // range (-PI, PI]
-    theta *= 180 / Math.PI; // rads to degs, range (-180, 180]
-    if (theta < 0) theta = 360 + theta; // range [0, 360)
-
-    if (theta < 90) {
-        theta = (theta + 270) % 360
-    } else {
-        theta = theta - 90;
-    }
-    return theta;
-}
-
-function commonPlayerEnenmy(speed, image) {
-    return {
-        speed: speed,
-        rotation: 0,
-        anchor: { x: 0.5, y: 0.5 },
-        image: imageAssets[image],
-        right: function () {
-            if (!this.willHitSomething("right")) {
-                this.x += this.speed
-                this.rotation = degrees_to_radians(90)
-            }
-        },
-        left: function () {
-            if (!this.willHitSomething("left")) {
-                this.x -= this.speed
-                this.rotation = degrees_to_radians(270)
-            }
-        },
-        up: function () {
-            if (!this.willHitSomething("up")) {
-                this.y -= this.speed
-                this.rotation = degrees_to_radians(0)
-            }
-        },
-        down: function () {
-            if (!this.willHitSomething("down")) {
-                this.y += this.speed
-                this.rotation = degrees_to_radians(180)
-            }
-        },
-
-        willHitSomething: function (direction) {
-            let r = false
-            switch (direction) {
-                case 'up':
-                    r = tileEngine.layerCollidesWith('lvl1', { x: this.x - PLAYER_SIZE / 2, y: this.y - this.speed - PLAYER_SIZE / 2, height: this.height, width: this.width })
-                    break;
-                case 'down':
-                    r = tileEngine.layerCollidesWith('lvl1', { x: this.x - PLAYER_SIZE / 2, y: this.y + this.speed - PLAYER_SIZE / 2, height: this.height, width: this.width })
-                    break;
-                case 'left':
-                    r = tileEngine.layerCollidesWith('lvl1', { x: this.x - this.speed - PLAYER_SIZE / 2, y: this.y - PLAYER_SIZE / 2, height: this.height, width: this.width })
-                    break;
-                case 'right':
-                    r = tileEngine.layerCollidesWith('lvl1', { x: this.x + this.speed - PLAYER_SIZE / 2, y: this.y - PLAYER_SIZE / 2, height: this.height, width: this.width })
-                    break;
-            }
-
-            // Check enemy collisions
-            // TODO
-
-
-            return r
-
-        }
-    }
-}
 
 function getConeView(enemy) {
     return Sprite({
         x: enemy.x,
         y: enemy.y,
-        color: 'rgba(0,0,255,0.0)',
+        color: 'rgba(0,0,255,0.2)',
         direction: radians_to_degrees(enemy.rotation),
         points: [],
 
